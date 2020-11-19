@@ -257,9 +257,11 @@ func (s *Sentinel) SlaveAddrs() ([]string, error) {
 
 // Slave represents a Redis slave instance which is known by Sentinel.
 type Slave struct {
-	ip    string
-	port  string
-	flags string
+	ip               string
+	port             string
+	flags            string
+	masterLinkStatus string
+	slavePriority    string
 }
 
 // Addr returns an address of slave.
@@ -269,7 +271,7 @@ func (s *Slave) Addr() string {
 
 // Available returns if slave is in working state at moment based on information in slave flags.
 func (s *Slave) Available() bool {
-	return !strings.Contains(s.flags, "disconnected") && !strings.Contains(s.flags, "s_down")
+	return !strings.Contains(s.flags, "disconnected") && !strings.Contains(s.flags, "s_down") s.masterLinkStatus == "ok"
 }
 
 // Slaves returns a slice with known slaves of master instance.
@@ -386,9 +388,11 @@ func queryForSlaves(conn redis.Conn, masterName string) ([]*Slave, error) {
 			return slaves, err
 		}
 		slave := &Slave{
-			ip:    sm["ip"],
-			port:  sm["port"],
-			flags: sm["flags"],
+			ip:               sm["ip"],
+			port:             sm["port"],
+			flags:            sm["flags"],
+			masterLinkStatus: sm["master-link-status"],
+			slavePriority:    sm["slave-priority"],
 		}
 		slaves = append(slaves, slave)
 	}
