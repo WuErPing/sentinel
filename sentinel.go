@@ -3,6 +3,7 @@ package sentinel
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net"
 	"strings"
 	"sync"
@@ -271,7 +272,7 @@ func (s *Slave) Addr() string {
 
 // Available returns if slave is in working state at moment based on information in slave flags.
 func (s *Slave) Available() bool {
-	return !strings.Contains(s.flags, "disconnected") && !strings.Contains(s.flags, "s_down") s.masterLinkStatus == "ok"
+	return !strings.Contains(s.flags, "disconnected") && !strings.Contains(s.flags, "s_down") && s.masterLinkStatus == "ok"
 }
 
 // Slaves returns a slice with known slaves of master instance.
@@ -382,11 +383,13 @@ func queryForSlaves(conn redis.Conn, masterName string) ([]*Slave, error) {
 		return nil, err
 	}
 	slaves := make([]*Slave, 0)
+
 	for _, a := range res {
 		sm, err := redis.StringMap(a, err)
 		if err != nil {
 			return slaves, err
 		}
+		log.Println(sm)
 		slave := &Slave{
 			ip:               sm["ip"],
 			port:             sm["port"],
