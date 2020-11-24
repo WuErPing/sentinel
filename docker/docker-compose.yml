@@ -47,7 +47,7 @@ services:
     command: redis-sentinel /usr/local/etc/redis/sentinel.conf
     restart: always
     ports:
-      - 26380:26379
+      - 26380:26380
     volumes:
       - ./sentinel/sentinel2.conf:/usr/local/etc/redis/sentinel.conf
 
@@ -57,6 +57,6 @@ services:
     command: redis-sentinel /usr/local/etc/redis/sentinel.conf
     restart: always
     ports:
-      - 26381:26379
+      - 26381:26381
     volumes:
       - ./sentinel/sentinel3.conf:/usr/local/etc/redis/sentinel.conf

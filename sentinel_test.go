@@ -25,6 +25,11 @@ func TestSentinelPool(t *testing.T) {
 			return c, nil
 		},
 	}
+	slaves, err := sntnl.Slaves()
+	assert.NoError(t, err)
+	for _, slave := range slaves {
+		t.Log(slave, slave.Available())
+	}
 	pool := &redis.Pool{
 		MaxIdle:     3,
 		MaxActive:   64,
@@ -63,11 +68,6 @@ func TestSentinelPool(t *testing.T) {
 		t.Log(c)
 	}
 	t.Log(pool.ActiveCount())
-	slaves, err := sntnl.Slaves()
-	assert.NoError(t, err)
-	for _, slave := range slaves {
-		t.Log(slave, slave.Available())
-	}
 	r, err := redis.String(c.Do("get", "key_andy"))
 	assert.NoError(t, err)
 	defer c.Close()
