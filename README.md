@@ -8,6 +8,13 @@ Documentation
 
 - [API Reference](http://godoc.org/github.com/FZambia/sentinel)
 
+test
+-------------
+
+make cp
+make up
+go test -v ./...
+
 Alternative solution
 --------------------
 
@@ -36,6 +43,4 @@ This way you don't need to use this library.
 License
 -------
 
-Library is available under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.html). 
-
-echo "sentinel slaves mymaster" | redis-cli -p 26379 > t.txt
+Library is available under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.html).

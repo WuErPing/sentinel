@@ -66,7 +66,7 @@ func TestSentinelPool(t *testing.T) {
 	slaves, err := sntnl.Slaves()
 	assert.NoError(t, err)
 	for _, slave := range slaves {
-		t.Log(slave)
+		t.Log(slave, slave.Available())
 	}
 	r, err := redis.String(c.Do("get", "key_andy"))
 	assert.NoError(t, err)

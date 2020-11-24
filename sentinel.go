@@ -263,6 +263,7 @@ type Slave struct {
 	flags            string
 	masterLinkStatus string
 	slavePriority    string
+	runID            string
 }
 
 // Addr returns an address of slave.
@@ -396,6 +397,7 @@ func queryForSlaves(conn redis.Conn, masterName string) ([]*Slave, error) {
 			flags:            sm["flags"],
 			masterLinkStatus: sm["master-link-status"],
 			slavePriority:    sm["slave-priority"],
+			runID:            sm["runid"],
 		}
 		slaves = append(slaves, slave)
 	}

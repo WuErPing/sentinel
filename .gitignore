@@ -22,3 +22,8 @@ _testmain.go
 *.exe
 *.test
 *.prof
+
+
+docker/sentinel/sentinel1.conf
+docker/sentinel/sentinel2.conf
+docker/sentinel/sentinel3.conf
