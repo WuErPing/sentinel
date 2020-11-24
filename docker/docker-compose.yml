@@ -9,7 +9,6 @@ services:
       - 6379:6379
     volumes:
       - /tmp/data:/data
-
   slave1:
     image: redis:4.0-alpine
     container_name: redis-slave-1
@@ -19,6 +18,8 @@ services:
       - 6380:6380
     volumes:
       - /tmp/data:/data
+    links:
+      - master:redis-master
   slave2:
     image: redis:4.0-alpine
     container_name: redis-slave-2
@@ -28,7 +29,8 @@ services:
       - 6381:6381
     volumes:
       - /tmp/data:/data
-
+    links:
+      - master:redis-master
   sentinel1:
     image: redis:4.0-alpine
     container_name: redis-sentinel-1

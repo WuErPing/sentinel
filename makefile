@@ -1,5 +1,18 @@
 # [Installing - gomplate documentation](https://docs.gomplate.ca/installing/)
-export REDIS_MASTER_IP=$(shell ipconfig getifaddr en0)
+ifeq ($(OS),Windows_NT)
+	# OSNAME = WIN32
+else
+	UNAME_S := $(shell uname -s)
+	ifeq ($(UNAME_S),Linux)
+		# OSNAME = LINUX
+		export REDIS_MASTER_IP=$(shell ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
+	endif
+	ifeq ($(UNAME_S),Darwin)
+		# OSNAME = OSX
+		export REDIS_MASTER_IP=$(shell ipconfig getifaddr en0)
+	endif
+endif
+
 up:
 	cd docker; \
 	docker-compose up -d
