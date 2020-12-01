@@ -44,3 +44,27 @@ License
 -------
 
 Library is available under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.html).
+
+```json
+2020/11/24 16:15:44 map[
+    down-after-milliseconds:30000
+    flags:slave
+    info-refresh:996
+    ip:172.23.0.1
+    last-ok-ping-reply:315
+    last-ping-reply:315
+    last-ping-sent:0
+    link-pending-commands:0
+    link-refcount:1
+    master-host:172.25.184.229
+    master-link-down-time:0
+    master-link-status:ok
+    master-port:6379
+    name:172.23.0.1:6381
+    port:6381
+    role-reported:slave
+    role-reported-time:1577043
+    runid:4e2f5677d0465b001c30049240d706f2385c55d9
+    slave-priority:100
+    slave-repl-offset:364985]
+```

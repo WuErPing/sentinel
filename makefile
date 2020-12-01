@@ -14,6 +14,7 @@ else
 endif
 
 up:
+	mkdir -p /tmp/data/sentinel
 	cd docker; \
 	docker-compose up -d
 down:
@@ -24,8 +25,21 @@ cp:
 	gomplate -f sentinel.conf.tpl -o sentinel1.conf; \
 	gomplate -f sentinel.conf.tpl -o sentinel2.conf; \
 	gomplate -f sentinel.conf.tpl -o sentinel3.conf; 
-test:
+try:
 	@echo test.$(REDIS_MASTER_IP) 
 	@echo 'Hello, {{ .Env.USER }}' | gomplate
 	@echo 'Hello, {{ .Env.REDIS_MASTER_IP }}' | gomplate
 	gomplate -f docker/sentinel/sentinel1.conf -o docker/sentinel/sentinel1.conf
+test:
+	go clean -testcache
+	go test -v ./...
+uml:
+	mkdir -p doc
+	goplantuml -recursive \
+	  --show-implementations \
+	  -aggregate-private-members -show-aggregations -show-compositions \
+	  -show-connection-labels -show-aliases ./ \
+	  > doc/class.puml
+	cp -p doc/class.puml doc/class.md
+	gsed -i '1i\```plantuml' doc/class.md
+	echo '```' >> doc/class.md

@@ -1,9 +1,9 @@
 package sentinel
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"strings"
 	"sync"
@@ -256,24 +256,53 @@ func (s *Sentinel) SlaveAddrs() ([]string, error) {
 	return res.([]string), nil
 }
 
-// Slave represents a Redis slave instance which is known by Sentinel.
+// AvailableSlaveAddrs returns a slice with known available slave addresses of current master instance.
+func (s *Sentinel) AvailableSlaveAddrs() ([]string, error) {
+	res, err := s.doUntilSuccess(func(c redis.Conn) (interface{}, error) {
+		return queryForAvailableSlaveAddrs(c, s.MasterName)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return res.([]string), nil
+}
+
+// Slave Slave represents a Redis slave instance which is known by Sentinel.
+// https://github.com/redis/redis/blob/ba647598b480c9e5e951d591a3050bee7f9f8266/src%2Fsentinel.c#L163
+// https://github.com/redis/redis/blob/ba647598b480c9e5e951d591a3050bee7f9f8266/src%2Fsentinel.c#L54
 type Slave struct {
-	ip               string
-	port             string
-	flags            string
-	masterLinkStatus string
-	slavePriority    string
-	runID            string
+	DownAfterMilliSeconds string `json:"down-after-milliseconds"`
+	Flags                 string `json:"flags"`
+	InfoRefresh           string `json:"info-refresh"`
+	IP                    string `json:"ip"`
+	LastOkPingReply       string `json:"last-ok-ping-reply"`
+	LastPingSent          string `json:"last-ping-reply"`
+	LinkPendingCommands   string `json:"link-pending-commands"`
+	LinkRefcount          string `json:"link-refcount"`
+	MasterHost            string `json:"master-host"`
+	MasterPort            string `json:"master-port"`
+	MasterLinkDownTime    string `json:"master-link-down-time"`
+	MasterLinkStatus      string `json:"master-link-status"`
+	Name                  string `json:"name"`
+	RoleReported          string `json:"role-reported"`
+	RoleReportedTime      string `json:"role-reported-time"`
+	Port                  string `json:"port"`
+	SlavePriority         string `json:"slave-priority"`
+	SlaveReplOffset       string `json:"slave-repl-offset"`
+	RunID                 string `json:"runid"`
 }
 
 // Addr returns an address of slave.
 func (s *Slave) Addr() string {
-	return net.JoinHostPort(s.ip, s.port)
+	return net.JoinHostPort(s.IP, s.Port)
 }
 
 // Available returns if slave is in working state at moment based on information in slave flags.
 func (s *Slave) Available() bool {
-	return !strings.Contains(s.flags, "disconnected") && !strings.Contains(s.flags, "s_down") && s.masterLinkStatus == "ok"
+	return !strings.Contains(s.Flags, "disconnected") &&
+		!strings.Contains(s.Flags, "s_down") &&
+		s.MasterLinkStatus == "ok" &&
+		s.SlavePriority != "0"
 }
 
 // Slaves returns a slice with known slaves of master instance.
@@ -378,6 +407,20 @@ func queryForSlaveAddrs(conn redis.Conn, masterName string) ([]string, error) {
 	return slaveAddrs, nil
 }
 
+func queryForAvailableSlaveAddrs(conn redis.Conn, masterName string) ([]string, error) {
+	slaves, err := queryForSlaves(conn, masterName)
+	if err != nil {
+		return nil, err
+	}
+	slaveAddrs := make([]string, 0)
+	for _, slave := range slaves {
+		if slave.Available() {
+			slaveAddrs = append(slaveAddrs, slave.Addr())
+		}
+	}
+	return slaveAddrs, nil
+}
+
 func queryForSlaves(conn redis.Conn, masterName string) ([]*Slave, error) {
 	res, err := redis.Values(conn.Do("SENTINEL", "slaves", masterName))
 	if err != nil {
@@ -390,14 +433,14 @@ func queryForSlaves(conn redis.Conn, masterName string) ([]*Slave, error) {
 		if err != nil {
 			return slaves, err
 		}
-		log.Println(sm)
-		slave := &Slave{
-			ip:               sm["ip"],
-			port:             sm["port"],
-			flags:            sm["flags"],
-			masterLinkStatus: sm["master-link-status"],
-			slavePriority:    sm["slave-priority"],
-			runID:            sm["runid"],
+		jsonString, err := json.Marshal(sm)
+		if err != nil {
+			return nil, err
+		}
+		slave := &Slave{}
+		err = json.Unmarshal(jsonString, slave)
+		if err != nil {
+			return nil, err
 		}
 		slaves = append(slaves, slave)
 	}

@@ -2,6 +2,7 @@ package sentinel_test
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -11,7 +12,7 @@ import (
 	"github.com/gomodule/redigo/redis"
 )
 
-func TestSentinelPool(t *testing.T) {
+func TestSentinel(t *testing.T) {
 	sntnl := &sentinel.Sentinel{
 		Addrs:      []string{":26379", ":26380", ":26381"},
 		MasterName: "mymaster",
@@ -27,25 +28,46 @@ func TestSentinelPool(t *testing.T) {
 	}
 	slaves, err := sntnl.Slaves()
 	assert.NoError(t, err)
+	assert.GreaterOrEqual(t, len(slaves), 2)
 	for _, slave := range slaves {
-		t.Log(slave, slave.Available())
+		assert.NotEmpty(t, slave)
+		t.Log(slave.Available(), slave)
 	}
-	pool := &redis.Pool{
+
+	slaveAddrs, err := sntnl.SlaveAddrs()
+	assert.NoError(t, err)
+	t.Log(slaveAddrs)
+
+	availableSlaveAddrs, err := sntnl.AvailableSlaveAddrs()
+	assert.NoError(t, err)
+	t.Log(availableSlaveAddrs)
+	assert.GreaterOrEqual(t, len(slaveAddrs), len(availableSlaveAddrs))
+}
+
+func newSentinelPool() *redis.Pool {
+	sntnl := &sentinel.Sentinel{
+		Addrs:      []string{":26379", ":26380", ":26381"},
+		MasterName: "mymaster",
+		Dial: func(addr string) (redis.Conn, error) {
+			timeout := 500 * time.Millisecond
+			c, err := redis.DialTimeout("tcp", addr, timeout, timeout, timeout)
+			if err != nil {
+				return nil, err
+			}
+			return c, nil
+		},
+	}
+	return &redis.Pool{
 		MaxIdle:     3,
 		MaxActive:   64,
 		Wait:        true,
 		IdleTimeout: 240 * time.Second,
 		Dial: func() (redis.Conn, error) {
 			masterAddr, err := sntnl.MasterAddr()
-			assert.NoError(t, err)
 			if err != nil {
 				return nil, err
 			}
-			c, err := redis.Dial("tcp",
-				masterAddr,
-				redis.DialUsername(""),
-				redis.DialPassword("test@hago"))
-			assert.NoError(t, err)
+			c, err := redis.Dial("tcp", masterAddr)
 			if err != nil {
 				return nil, err
 			}
@@ -59,7 +81,11 @@ func TestSentinelPool(t *testing.T) {
 			}
 		},
 	}
+}
 
+func TestPool(t *testing.T) {
+	pool := newSentinelPool()
+	fmt.Print(pool)
 	c, err := pool.Dial()
 	assert.NoError(t, err)
 	if err != nil {
@@ -67,9 +93,7 @@ func TestSentinelPool(t *testing.T) {
 	} else {
 		t.Log(c)
 	}
-	t.Log(pool.ActiveCount())
-	r, err := redis.String(c.Do("get", "key_andy"))
-	assert.NoError(t, err)
+	_, err = redis.String(c.Do("get", "key_non_existent"))
+	assert.Error(t, err)
 	defer c.Close()
-	t.Log(r)
 }
